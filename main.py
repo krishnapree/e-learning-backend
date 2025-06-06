@@ -60,11 +60,12 @@ app = FastAPI(title="EduFlow API", version="1.0.0", description="AI-Powered Lear
 
 # Configure CORS with environment-based origins
 origins = [
+    "https://elearningmanagement.netlify.app",  # Your actual Netlify frontend
     "https://elearningmanagement.vercel.app",
     "https://e-learning-management-eight.vercel.app",
     "http://localhost:5000",
     "http://127.0.0.1:5000",
-    "*"  # Allow all origins as fallback - will accept your new Vercel domain
+    "*"  # Allow all origins as fallback
 ]
 
 app.add_middleware(
@@ -74,6 +75,15 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "EduFlow Backend is running"}
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to EduFlow API", "docs": "/docs", "health": "/health"}
 
 # Initialize services
 auth_manager = AuthManager()
@@ -2672,24 +2682,11 @@ async def options_handler(path: str):
     return {"message": "OK"}
 
 if __name__ == "__main__":
-    # Import and run EduFlow seed data
-    try:
-        from masterlms_seed import seed_eduflow_data
-        seed_eduflow_data()
-    except Exception as e:
-        logger.warning(f"Failed to seed EduFlow data: {e}")
-        # Fallback to original seed data
-        try:
-            from seed_data import seed_database
-            seed_database()
-        except Exception as e2:
-            logger.error(f"Failed to seed any data: {e2}")
-
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8000,
-        reload=True
+        port=int(os.getenv("PORT", 8000)),
+        reload=False  # Set to False for production
     )
 
 
