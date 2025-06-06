@@ -140,14 +140,15 @@ async def register(request: RegisterRequest, response: Response, db: Session = D
         user = auth_manager.create_user(db, request.name, request.email, request.password)
         token = auth_manager.create_access_token(user.id)  # type: ignore
 
-        # Set HTTP-only cookie
+        # Set HTTP-only cookie with proper cross-domain settings
         response.set_cookie(
             key="access_token",
             value=token,
             httponly=True,
-            secure=os.getenv("ENVIRONMENT") == "production",  # True in production with HTTPS
-            samesite="lax",
-            max_age=86400 * 7  # 7 days
+            secure=True,  # Always True for HTTPS (both Netlify and Render use HTTPS)
+            samesite="none",  # Allow cross-site cookies for Netlify <-> Render
+            max_age=86400 * 7,  # 7 days
+            domain=None  # Don't set domain to allow cross-origin
         )
 
         return {
@@ -157,7 +158,8 @@ async def register(request: RegisterRequest, response: Response, db: Session = D
                 "email": user.email,
                 "role": user.role.value,
                 "created_at": user.created_at.isoformat()
-            }
+            },
+            "access_token": token  # Also return token in response for frontend fallback
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -168,14 +170,15 @@ async def login(request: LoginRequest, response: Response, db: Session = Depends
         user = auth_manager.authenticate_user(db, request.email, request.password)
         token = auth_manager.create_access_token(user.id)  # type: ignore
 
-        # Set HTTP-only cookie
+        # Set HTTP-only cookie with proper cross-domain settings
         response.set_cookie(
             key="access_token",
             value=token,
             httponly=True,
-            secure=os.getenv("ENVIRONMENT") == "production",  # True in production with HTTPS
-            samesite="lax",
-            max_age=86400 * 7  # 7 days
+            secure=True,  # Always True for HTTPS (both Netlify and Render use HTTPS)
+            samesite="none",  # Allow cross-site cookies for Netlify <-> Render
+            max_age=86400 * 7,  # 7 days
+            domain=None  # Don't set domain to allow cross-origin
         )
 
         return {
@@ -185,7 +188,8 @@ async def login(request: LoginRequest, response: Response, db: Session = Depends
                 "email": user.email,
                 "role": user.role.value,
                 "created_at": user.created_at.isoformat()
-            }
+            },
+            "access_token": token  # Also return token in response for frontend fallback
         }
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
@@ -242,23 +246,25 @@ async def refresh_token(request: Request, response: Response, db: Session = Depe
     new_access_token = auth_manager.create_access_token(user.id)  # type: ignore
     new_refresh_token = auth_manager.create_refresh_token(user.id)  # type: ignore
 
-    # Set new cookies
+    # Set new cookies with proper cross-domain settings
     response.set_cookie(
         key="access_token",
         value=new_access_token,
         httponly=True,
-        secure=os.getenv("ENVIRONMENT") == "production",
-        samesite="lax",
-        max_age=86400 * 7  # 7 days
+        secure=True,  # Always True for HTTPS
+        samesite="none",  # Allow cross-site cookies
+        max_age=86400 * 7,  # 7 days
+        domain=None
     )
 
     response.set_cookie(
         key="refresh_token",
         value=new_refresh_token,
         httponly=True,
-        secure=os.getenv("ENVIRONMENT") == "production",
-        samesite="lax",
-        max_age=86400 * 30  # 30 days
+        secure=True,  # Always True for HTTPS
+        samesite="none",  # Allow cross-site cookies
+        max_age=86400 * 30,  # 30 days
+        domain=None
     )
 
     return {"message": "Token refreshed successfully"}
