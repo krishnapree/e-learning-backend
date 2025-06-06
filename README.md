@@ -110,13 +110,16 @@ GEMINI_API_KEY=your-gemini-api-key-here
 STRIPE_API_KEY=sk_live_your-stripe-secret-key-here
 STRIPE_WEBHOOK_SECRET=whsec_your-webhook-secret-here
 
+# Frontend Connection (IMPORTANT!)
+FRONTEND_URL=https://elearningmanagement.netlify.app
+
 # Optional but Recommended
 OPENAI_API_KEY=your-openai-api-key-here
-FRONTEND_URL=https://elearningmanagement.netlify.app
 ENVIRONMENT=production
 JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 REFRESH_TOKEN_EXPIRE_MINUTES=10080
+PORT=8000
 ```
 
 ### Deployment Steps

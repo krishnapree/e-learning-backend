@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from fastapi import FastAPI, Depends, HTTPException, File, UploadFile, Request, Response, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -58,23 +59,31 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="EduFlow API", version="1.0.0", description="AI-Powered Learning Management System")
 
-# Configure CORS with environment-based origins
-origins = [
-    "https://elearningmanagement.netlify.app",  # Your actual Netlify frontend
-    "https://elearningmanagement.vercel.app",
-    "https://e-learning-management-eight.vercel.app",
-    "http://localhost:5000",
-    "http://127.0.0.1:5000",
-    "*"  # Allow all origins as fallback
-]
-
+# Configure CORS - Specific for Netlify frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=[
+        "https://elearningmanagement.netlify.app",  # Primary Netlify frontend
+        "http://localhost:5000",  # Local development
+        "http://127.0.0.1:5000",  # Local development alternative
+    ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["*"],
+    allow_methods=["*"],  # Allow all HTTP methods
+    allow_headers=["*"],  # Allow all headers
 )
+
+# Request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    logger.info(f"🔄 {request.method} {request.url}")
+
+    response = await call_next(request)
+
+    process_time = time.time() - start_time
+    logger.info(f"✅ {request.method} {request.url} - Status: {response.status_code} - Time: {process_time:.2f}s")
+
+    return response
 
 # Health check endpoint
 @app.get("/health")
@@ -181,10 +190,26 @@ async def login(request: LoginRequest, response: Response, db: Session = Depends
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e))
 
+# Alternative auth endpoints for frontend compatibility
+@app.post("/api/auth/login")
+async def auth_login(request: LoginRequest, response: Response, db: Session = Depends(get_db)):
+    """Alternative login endpoint for frontend compatibility"""
+    return await login(request, response, db)
+
+@app.post("/api/auth/register")
+async def auth_register(request: RegisterRequest, response: Response, db: Session = Depends(get_db)):
+    """Alternative register endpoint for frontend compatibility"""
+    return await register(request, response, db)
+
 @app.post("/api/logout")
 async def logout(response: Response):
     response.delete_cookie(key="access_token")
     return {"message": "Logged out successfully"}
+
+@app.post("/api/auth/logout")
+async def auth_logout(response: Response):
+    """Alternative logout endpoint for frontend compatibility"""
+    return await logout(response)
 
 @app.get("/api/user")
 async def get_current_user_info(current_user: User = Depends(get_current_user)):
