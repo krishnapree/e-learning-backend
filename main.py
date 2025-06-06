@@ -66,10 +66,22 @@ app.add_middleware(
         "https://elearningmanagement.netlify.app",  # Primary Netlify frontend
         "http://localhost:5000",  # Local development
         "http://127.0.0.1:5000",  # Local development alternative
+        "http://localhost:3000",  # React dev server
+        "http://127.0.0.1:3000",  # React dev server alternative
     ],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all HTTP methods
-    allow_headers=["*"],  # Allow all headers
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # Explicit methods
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "Authorization",
+        "X-Requested-With",
+        "Origin",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+    ],
 )
 
 # Request logging middleware
