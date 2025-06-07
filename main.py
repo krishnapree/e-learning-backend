@@ -45,11 +45,20 @@ logger = get_logger(__name__)
 
 # Validate environment variables
 def validate_environment():
-    required_vars = ["GEMINI_API_KEY", "DATABASE_URL", "JWT_SECRET_KEY", "STRIPE_API_KEY", "STRIPE_WEBHOOK_SECRET"]
-    missing = [var for var in required_vars if not os.getenv(var)]
-    if missing:
-        logger.error(f"Missing required environment variables: {', '.join(missing)}")
-        raise EnvironmentError(f"Missing required environment variables: {', '.join(missing)}")
+    # Only require essential variables for basic functionality
+    essential_vars = ["DATABASE_URL", "JWT_SECRET_KEY"]
+    missing_essential = [var for var in essential_vars if not os.getenv(var)]
+
+    if missing_essential:
+        logger.error(f"Missing essential environment variables: {', '.join(missing_essential)}")
+        raise EnvironmentError(f"Missing essential environment variables: {', '.join(missing_essential)}")
+
+    # Warn about optional but recommended variables
+    optional_vars = ["GEMINI_API_KEY", "STRIPE_API_KEY", "STRIPE_WEBHOOK_SECRET", "OPENAI_API_KEY"]
+    missing_optional = [var for var in optional_vars if not os.getenv(var)]
+
+    if missing_optional:
+        logger.warning(f"Missing optional environment variables (some features may not work): {', '.join(missing_optional)}")
 
 # Call before app initialization
 validate_environment()

@@ -7,14 +7,21 @@ from typing import Dict, Any, Optional, List
 class GeminiService:
     def __init__(self):
         api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("GEMINI_API_KEY environment variable is not set")
+        self.is_configured = False
+        self.model = None
 
-        # Configure the Gemini API
-        genai.configure(api_key=api_key)
-
-        # Get the model (using the latest available model)
-        self.model = genai.GenerativeModel('gemini-1.5-flash')
+        if api_key:
+            try:
+                # Configure the Gemini API
+                genai.configure(api_key=api_key)
+                # Get the model (using the latest available model)
+                self.model = genai.GenerativeModel('gemini-1.5-flash')
+                self.is_configured = True
+            except Exception as e:
+                print(f"Warning: Failed to initialize Gemini service: {e}")
+                self.is_configured = False
+        else:
+            print("Warning: GEMINI_API_KEY not set. AI features will be disabled.")
 
         # System prompt for AI tutor
         self.system_prompt = """
@@ -49,6 +56,16 @@ class GeminiService:
 
     async def get_response(self, question: str) -> Dict[str, Any]:
         try:
+            if not self.is_configured or not self.model:
+                return {
+                    "text": "I'm sorry, but the AI service is currently unavailable. Please check that the GEMINI_API_KEY is properly configured.",
+                    "hasCode": False,
+                    "codeSnippet": None,
+                    "language": None,
+                    "hasChart": False,
+                    "chartData": None
+                }
+
             # Enhance the prompt with the system prompt
             enhanced_prompt = f"{self.system_prompt}\n\nStudent question: {question}"
 
