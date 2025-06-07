@@ -2773,10 +2773,34 @@ async def test_endpoint():
         "cors_enabled": True
     }
 
-@app.options("/{path:path}")
-async def options_handler(path: str):
-    """Handle CORS preflight requests"""
-    return {"message": "OK"}
+@app.get("/api/test-cors")
+async def test_cors():
+    """Test CORS configuration"""
+    return {
+        "message": "CORS is working!",
+        "origin_allowed": "https://elearningmanagement.netlify.app",
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "cors_headers": {
+            "Access-Control-Allow-Origin": "https://elearningmanagement.netlify.app",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+            "Access-Control-Allow-Headers": "*"
+        }
+    }
+
+@app.post("/api/test-auth")
+async def test_auth(current_user: User = Depends(get_current_user)):
+    """Test authentication"""
+    return {
+        "message": "Authentication is working!",
+        "user": {
+            "id": current_user.id,
+            "name": current_user.name,
+            "email": current_user.email,
+            "role": current_user.role.value
+        },
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
 
 if __name__ == "__main__":
     uvicorn.run(
