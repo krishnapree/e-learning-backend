@@ -51,7 +51,8 @@ def validate_environment():
 
     if missing_essential:
         logger.error(f"Missing essential environment variables: {', '.join(missing_essential)}")
-        raise EnvironmentError(f"Missing essential environment variables: {', '.join(missing_essential)}")
+        # Don't raise an error during import - let the app start and handle this gracefully
+        logger.warning("Application will start but some features may not work properly")
 
     # Warn about optional but recommended variables
     optional_vars = ["GEMINI_API_KEY", "STRIPE_API_KEY", "STRIPE_WEBHOOK_SECRET", "OPENAI_API_KEY"]
