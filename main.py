@@ -68,40 +68,8 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="EduFlow API", version="1.0.0", description="AI-Powered Learning Management System")
 
-# Configure CORS - Comprehensive setup for Netlify frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://elearningmanagement.netlify.app",  # Primary Netlify frontend
-        "http://localhost:5000",  # Local development
-        "http://127.0.0.1:5000",  # Local development alternative
-        "http://localhost:3000",  # React dev server
-        "http://127.0.0.1:3000",  # React dev server alternative
-        "http://localhost:8000",  # FastAPI dev server
-        "http://127.0.0.1:8000",  # FastAPI dev server alternative
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
-    allow_headers=[
-        "Accept",
-        "Accept-Language",
-        "Content-Language",
-        "Content-Type",
-        "content-type",  # Lowercase version
-        "Authorization",
-        "authorization",  # Lowercase version
-        "X-Requested-With",
-        "Origin",
-        "Access-Control-Request-Method",
-        "Access-Control-Request-Headers",
-        "Cache-Control",
-        "Pragma",
-        "Expires",
-        "X-CSRF-Token",
-        "*"  # Wildcard as fallback
-    ],
-    expose_headers=["*"],
-)
+# CORS Configuration - Using custom middleware instead of FastAPI's CORSMiddleware
+# to ensure proper header handling
 
 # Add explicit OPTIONS handler for CORS preflight requests
 @app.options("/{full_path:path}")
@@ -121,6 +89,18 @@ async def options_handler(request: Request):
 # CORS headers middleware - ensure CORS headers are always present
 @app.middleware("http")
 async def add_cors_headers(request: Request, call_next):
+    # Handle preflight requests directly
+    if request.method == "OPTIONS":
+        response = Response(status_code=200)
+        response.headers["Access-Control-Allow-Origin"] = "https://elearningmanagement.netlify.app"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+        response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, content-type, Authorization, authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Cache-Control, Pragma, Expires, X-CSRF-Token"
+        response.headers["Access-Control-Expose-Headers"] = "*"
+        response.headers["Access-Control-Max-Age"] = "86400"
+        return response
+
+    # For all other requests, process normally and add CORS headers
     response = await call_next(request)
 
     # Add CORS headers to all responses
