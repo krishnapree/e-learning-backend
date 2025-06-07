@@ -81,9 +81,26 @@ app.add_middleware(
         "http://127.0.0.1:8000",  # FastAPI dev server alternative
     ],
     allow_credentials=True,
-    allow_methods=["*"],  # Allow all methods including OPTIONS
-    allow_headers=["*"],  # Allow all headers
-    expose_headers=["*"],  # Expose all headers
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
+    allow_headers=[
+        "Accept",
+        "Accept-Language",
+        "Content-Language",
+        "Content-Type",
+        "content-type",  # Lowercase version
+        "Authorization",
+        "authorization",  # Lowercase version
+        "X-Requested-With",
+        "Origin",
+        "Access-Control-Request-Method",
+        "Access-Control-Request-Headers",
+        "Cache-Control",
+        "Pragma",
+        "Expires",
+        "X-CSRF-Token",
+        "*"  # Wildcard as fallback
+    ],
+    expose_headers=["*"],
 )
 
 # Add explicit OPTIONS handler for CORS preflight requests
@@ -94,8 +111,8 @@ async def options_handler(request: Request):
         status_code=200,
         headers={
             "Access-Control-Allow-Origin": "https://elearningmanagement.netlify.app",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
-            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
+            "Access-Control-Allow-Headers": "Accept, Accept-Language, Content-Language, Content-Type, content-type, Authorization, authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Cache-Control, Pragma, Expires, X-CSRF-Token",
             "Access-Control-Allow-Credentials": "true",
             "Access-Control-Max-Age": "86400",
         }
@@ -109,9 +126,10 @@ async def add_cors_headers(request: Request, call_next):
     # Add CORS headers to all responses
     response.headers["Access-Control-Allow-Origin"] = "https://elearningmanagement.netlify.app"
     response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+    response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, content-type, Authorization, authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Cache-Control, Pragma, Expires, X-CSRF-Token"
     response.headers["Access-Control-Expose-Headers"] = "*"
+    response.headers["Access-Control-Max-Age"] = "86400"
 
     return response
 
