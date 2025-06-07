@@ -68,48 +68,46 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="EduFlow API", version="1.0.0", description="AI-Powered Learning Management System")
 
-# CORS Configuration - Using custom middleware instead of FastAPI's CORSMiddleware
-# to ensure proper header handling
+# CORS Configuration - Comprehensive solution
+from fastapi.middleware.cors import CORSMiddleware
 
-# Add explicit OPTIONS handler for CORS preflight requests
-@app.options("/{full_path:path}")
-async def options_handler(request: Request):
-    """Handle CORS preflight requests"""
-    return Response(
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "https://elearningmanagement.netlify.app",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
-            "Access-Control-Allow-Headers": "Accept, Accept-Language, Content-Language, Content-Type, content-type, Authorization, authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Cache-Control, Pragma, Expires, X-CSRF-Token",
-            "Access-Control-Allow-Credentials": "true",
-            "Access-Control-Max-Age": "86400",
-        }
-    )
+# Add CORS middleware with explicit configuration
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://elearningmanagement.netlify.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"],
+)
 
-# CORS headers middleware - ensure CORS headers are always present
+# Additional CORS middleware to ensure headers are always present
 @app.middleware("http")
-async def add_cors_headers(request: Request, call_next):
-    # Handle preflight requests directly
+async def ensure_cors_headers(request: Request, call_next):
+    # Handle preflight requests
     if request.method == "OPTIONS":
         response = Response(status_code=200)
         response.headers["Access-Control-Allow-Origin"] = "https://elearningmanagement.netlify.app"
         response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
-        response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, content-type, Authorization, authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Cache-Control, Pragma, Expires, X-CSRF-Token"
-        response.headers["Access-Control-Expose-Headers"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "*"
+        response.headers["Access-Control-Allow-Headers"] = "*"
         response.headers["Access-Control-Max-Age"] = "86400"
         return response
 
-    # For all other requests, process normally and add CORS headers
+    # Process request normally
     response = await call_next(request)
 
-    # Add CORS headers to all responses
-    response.headers["Access-Control-Allow-Origin"] = "https://elearningmanagement.netlify.app"
-    response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
-    response.headers["Access-Control-Allow-Headers"] = "Accept, Accept-Language, Content-Language, Content-Type, content-type, Authorization, authorization, X-Requested-With, Origin, Access-Control-Request-Method, Access-Control-Request-Headers, Cache-Control, Pragma, Expires, X-CSRF-Token"
-    response.headers["Access-Control-Expose-Headers"] = "*"
-    response.headers["Access-Control-Max-Age"] = "86400"
+    # Ensure CORS headers are present
+    if "Access-Control-Allow-Origin" not in response.headers:
+        response.headers["Access-Control-Allow-Origin"] = "https://elearningmanagement.netlify.app"
+    if "Access-Control-Allow-Credentials" not in response.headers:
+        response.headers["Access-Control-Allow-Credentials"] = "true"
 
     return response
 
