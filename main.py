@@ -2783,6 +2783,50 @@ async def test_cors():
         }
     }
 
+@app.post("/api/init-test-users")
+async def init_test_users(db: Session = Depends(get_db)):
+    """Initialize test users for development"""
+    try:
+        # Check if users already exist
+        existing_admin = db.query(User).filter(User.email == "admin@eduflow.edu").first()
+        if existing_admin:
+            return {"message": "Test users already exist"}
+
+        # Create test users
+        test_users = [
+            {"name": "Admin User", "email": "admin@eduflow.edu", "password": "admin123", "role": UserRole.ADMIN},
+            {"name": "Dr. Wilson", "email": "dwilson@eduflow.edu", "password": "lecturer123", "role": UserRole.LECTURER},
+            {"name": "Alice Smith", "email": "asmith@student.eduflow.edu", "password": "student123", "role": UserRole.STUDENT},
+        ]
+
+        created_users = []
+        for user_data in test_users:
+            user = auth_manager.create_user(
+                db,
+                user_data["name"],
+                user_data["email"],
+                user_data["password"],
+                user_data["role"]
+            )
+            created_users.append({
+                "id": user.id,
+                "name": user.name,
+                "email": user.email,
+                "role": user.role.value
+            })
+
+        return {
+            "message": "Test users created successfully",
+            "users": created_users,
+            "login_info": {
+                "admin": {"email": "admin@eduflow.edu", "password": "admin123"},
+                "lecturer": {"email": "dwilson@eduflow.edu", "password": "lecturer123"},
+                "student": {"email": "asmith@student.eduflow.edu", "password": "student123"}
+            }
+        }
+    except Exception as e:
+        return {"error": str(e), "message": "Failed to create test users"}
+
 @app.post("/api/test-auth")
 async def test_auth(current_user: User = Depends(get_current_user)):
     """Test authentication"""
