@@ -68,10 +68,10 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="EduFlow API", version="1.0.0", description="AI-Powered Learning Management System")
 
-# CORS Configuration - Simple and reliable
+# CORS Configuration - Definitive solution with direct OPTIONS handling
 from fastapi.middleware.cors import CORSMiddleware
 
-# Simple, reliable CORS configuration
+# Add FastAPI CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -88,6 +88,21 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+# Direct OPTIONS handler for all routes
+@app.options("/{full_path:path}")
+async def options_handler(full_path: str):
+    """Handle all OPTIONS requests directly"""
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "https://elearningmanagement.netlify.app",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept, Origin, X-Requested-With, Cache-Control, Pragma, Expires, X-CSRF-Token",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Max-Age": "86400",
+        }
+    )
 
 # Request logging middleware
 @app.middleware("http")
