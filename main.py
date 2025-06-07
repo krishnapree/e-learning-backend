@@ -68,7 +68,7 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="EduFlow API", version="1.0.0", description="AI-Powered Learning Management System")
 
-# Configure CORS - Specific for Netlify frontend
+# Configure CORS - Comprehensive setup for Netlify frontend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -77,21 +77,43 @@ app.add_middleware(
         "http://127.0.0.1:5000",  # Local development alternative
         "http://localhost:3000",  # React dev server
         "http://127.0.0.1:3000",  # React dev server alternative
+        "http://localhost:8000",  # FastAPI dev server
+        "http://127.0.0.1:8000",  # FastAPI dev server alternative
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],  # Explicit methods
-    allow_headers=[
-        "Accept",
-        "Accept-Language",
-        "Content-Language",
-        "Content-Type",
-        "Authorization",
-        "X-Requested-With",
-        "Origin",
-        "Access-Control-Request-Method",
-        "Access-Control-Request-Headers",
-    ],
+    allow_methods=["*"],  # Allow all methods including OPTIONS
+    allow_headers=["*"],  # Allow all headers
+    expose_headers=["*"],  # Expose all headers
 )
+
+# Add explicit OPTIONS handler for CORS preflight requests
+@app.options("/{full_path:path}")
+async def options_handler(request: Request):
+    """Handle CORS preflight requests"""
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "https://elearningmanagement.netlify.app",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Allow-Credentials": "true",
+            "Access-Control-Max-Age": "86400",
+        }
+    )
+
+# CORS headers middleware - ensure CORS headers are always present
+@app.middleware("http")
+async def add_cors_headers(request: Request, call_next):
+    response = await call_next(request)
+
+    # Add CORS headers to all responses
+    response.headers["Access-Control-Allow-Origin"] = "https://elearningmanagement.netlify.app"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    response.headers["Access-Control-Expose-Headers"] = "*"
+
+    return response
 
 # Request logging middleware
 @app.middleware("http")
