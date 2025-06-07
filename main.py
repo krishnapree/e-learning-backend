@@ -120,7 +120,7 @@ async def log_requests(request: Request, call_next):
 # Health check endpoint
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "message": "EduFlow Backend is running"}
+    return {"status": "healthy", "message": "EduFlow Backend is running", "timestamp": datetime.now(timezone.utc).isoformat()}
 
 @app.get("/")
 async def root():
