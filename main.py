@@ -2710,6 +2710,29 @@ async def get_student_quiz_attempts(
 async def health_check():
     return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
 
+@app.get("/api/ai-status")
+async def ai_status_check():
+    """Check if AI services are properly configured"""
+    try:
+        # Test Gemini service
+        gemini_status = "configured" if os.getenv("GEMINI_API_KEY") else "missing"
+
+        # Test a simple Gemini call
+        if gemini_status == "configured":
+            try:
+                test_response = await gemini_service.get_response("Hello, this is a test.")
+                gemini_status = "working"
+            except Exception as e:
+                gemini_status = f"error: {str(e)[:100]}"
+
+        return {
+            "gemini_api": gemini_status,
+            "openai_api": "configured" if os.getenv("OPENAI_API_KEY") else "missing",
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        return {"error": str(e), "timestamp": datetime.now(timezone.utc).isoformat()}
+
 @app.get("/api/test")
 async def test_endpoint():
     """Test endpoint to verify API connectivity"""
