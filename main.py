@@ -68,10 +68,10 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="EduFlow API", version="1.0.0", description="AI-Powered Learning Management System")
 
-# CORS Configuration - Stable hybrid approach
+# CORS Configuration - Enhanced and bulletproof
 from fastapi.middleware.cors import CORSMiddleware
 
-# Add FastAPI CORS middleware with comprehensive settings
+# Add FastAPI CORS middleware with explicit configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -80,39 +80,82 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         "http://localhost:5000",
         "http://127.0.0.1:5000",
+        "http://localhost:5173",
+        "http://localhost:8080",
     ],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"],
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "Accept",
+        "Origin",
+        "X-Requested-With",
+        "Access-Control-Allow-Headers",
+        "Access-Control-Allow-Origin",
+        "Access-Control-Allow-Methods",
+        "Cache-Control",
+        "Pragma",
+        "Expires",
+        "X-CSRF-Token"
+    ],
     expose_headers=["*"],
+    max_age=86400,
 )
 
-# Additional CORS safety middleware for edge cases
+# Comprehensive CORS middleware for absolute coverage
 @app.middleware("http")
-async def cors_safety_middleware(request: Request, call_next):
-    """Safety middleware to ensure CORS headers are always present"""
-    try:
-        # Handle preflight requests immediately if FastAPI missed them
-        if request.method == "OPTIONS":
-            response = Response(status_code=200)
-            response.headers["Access-Control-Allow-Origin"] = "https://elearningmanagement.netlify.app"
-            response.headers["Access-Control-Allow-Credentials"] = "true"
-            response.headers["Access-Control-Allow-Methods"] = "*"
-            response.headers["Access-Control-Allow-Headers"] = "*"
-            response.headers["Access-Control-Max-Age"] = "86400"
-            return response
+async def comprehensive_cors_middleware(request: Request, call_next):
+    """Comprehensive CORS middleware to handle all edge cases"""
 
-        # Process request normally
-        response = await call_next(request)
+    # Get origin from request
+    origin = request.headers.get("origin")
+    allowed_origins = [
+        "https://elearningmanagement.netlify.app",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
+        "http://localhost:5173",
+        "http://localhost:8080",
+    ]
 
-        # Ensure CORS headers are present (fallback)
-        if "Access-Control-Allow-Origin" not in response.headers:
+    # Handle preflight requests (OPTIONS) immediately
+    if request.method == "OPTIONS":
+        response = Response(status_code=200)
+
+        # Set comprehensive CORS headers
+        if origin in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+        else:
             response.headers["Access-Control-Allow-Origin"] = "https://elearningmanagement.netlify.app"
-            response.headers["Access-Control-Allow-Credentials"] = "true"
+
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+        response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, Accept, Origin, X-Requested-With, Access-Control-Allow-Headers, Cache-Control, Pragma, Expires, X-CSRF-Token"
+        response.headers["Access-Control-Max-Age"] = "86400"
+        response.headers["Vary"] = "Origin"
 
         return response
+
+    try:
+        # Process the actual request
+        response = await call_next(request)
+
+        # Add CORS headers to the response
+        if origin in allowed_origins:
+            response.headers["Access-Control-Allow-Origin"] = origin
+        else:
+            response.headers["Access-Control-Allow-Origin"] = "https://elearningmanagement.netlify.app"
+
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        response.headers["Access-Control-Expose-Headers"] = "*"
+        response.headers["Vary"] = "Origin"
+
+        return response
+
     except Exception as e:
-        # If anything goes wrong, return a basic response with CORS headers
+        # Error fallback with CORS headers
         response = Response(status_code=500, content=f"Server error: {str(e)}")
         response.headers["Access-Control-Allow-Origin"] = "https://elearningmanagement.netlify.app"
         response.headers["Access-Control-Allow-Credentials"] = "true"
